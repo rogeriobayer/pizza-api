@@ -1,0 +1,530 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API do Pizza System",
+    "version": "1.0.0",
+    "description": "API para gerenciamento de pizzas e pedidos. Desenvolvido por Rogério Bayer"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3003/api",
+      "description": "Servidor local de desenvolvimento"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "Pizza": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "format": "float"
+          },
+          "ingredients": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "size": {
+            "type": "string",
+            "enum": ["small", "medium", "large"]
+          }
+        },
+        "required": ["name", "description", "price"]
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "user": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "pizzas": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pizza": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "required": ["pizza", "quantity"]
+            }
+          },
+          "totalPrice": {
+            "type": "number",
+            "format": "float"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "preparing", "delivering", "completed"]
+          }
+        },
+        "required": ["user", "pizzas", "totalPrice"]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["client", "admin"]
+          }
+        },
+        "required": ["name", "email", "password"]
+      },
+      "AuthToken": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "paths": {
+    "/pizzas": {
+      "get": {
+        "summary": "Obter todas as pizzas",
+        "operationId": "getAllPizzas",
+        "tags": ["Pizzas"],
+        "responses": {
+          "200": {
+            "description": "Lista de pizzas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Pizza" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Criar uma nova pizza",
+        "operationId": "createPizza",
+        "tags": ["Pizzas"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Pizza criada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Pizza" }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Pizza" }
+            }
+          }
+        }
+      }
+    },
+    "/pizzas/{id}": {
+      "get": {
+        "summary": "Obter uma pizza por ID",
+        "operationId": "getPizzaById",
+        "tags": ["Pizzas"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhes da pizza",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Pizza" }
+              }
+            }
+          },
+          "404": {
+            "description": "Pizza não encontrada"
+          }
+        }
+      },
+      "put": {
+        "summary": "Atualizar uma pizza",
+        "operationId": "updatePizza",
+        "tags": ["Pizzas"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pizza atualizada",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Pizza" }
+              }
+            }
+          },
+          "404": {
+            "description": "Pizza não encontrada"
+          },
+          "400": {
+            "description": "Entrada inválida"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Pizza" }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Excluir uma pizza",
+        "operationId": "deletePizza",
+        "tags": ["Pizzas"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Pizza excluída com sucesso"
+          },
+          "404": {
+            "description": "Pizza não encontrada"
+          }
+        }
+      }
+    },
+    "/orders": {
+      "post": {
+        "summary": "Criar um pedido",
+        "operationId": "createOrder",
+        "tags": ["Pedidos"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Pedido criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Order" }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Order" }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Obter pedidos do usuário",
+        "operationId": "getOrdersByUser",
+        "tags": ["Pedidos"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de pedidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Order" }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro no servidor"
+          }
+        }
+      }
+    },
+    "/orders/{id}": {
+      "get": {
+        "summary": "Obter um pedido por ID",
+        "operationId": "getOrderById",
+        "tags": ["Pedidos"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhes do pedido",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Order" }
+              }
+            }
+          },
+          "404": {
+            "description": "Pedido não encontrado"
+          },
+          "403": {
+            "description": "Acesso negado"
+          },
+          "500": {
+            "description": "Erro no servidor"
+          }
+        }
+      },
+      "put": {
+        "summary": "Atualizar o status de um pedido",
+        "operationId": "updateOrderStatus",
+        "tags": ["Pedidos"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["pending", "preparing", "delivering", "completed"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status do pedido atualizado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Order" }
+              }
+            }
+          },
+          "404": {
+            "description": "Pedido não encontrado"
+          },
+          "400": {
+            "description": "Status inválido"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["pending", "preparing", "delivering", "completed"]
+                  }
+                },
+                "required": ["status"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "summary": "Registrar um novo usuário",
+        "operationId": "register",
+        "tags": ["Autenticação"],
+        "responses": {
+          "201": {
+            "description": "Usuário registrado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthToken" }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/User" }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Login de um usuário",
+        "operationId": "login",
+        "tags": ["Autenticação"],
+        "responses": {
+          "200": {
+            "description": "Usuário logado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthToken" }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autorizado"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Pizzas",
+      "description": "Operações relacionadas às pizzas"
+    },
+    {
+      "name": "Pedidos",
+      "description": "Operações relacionadas aos pedidos"
+    },
+    {
+      "name": "Autenticação",
+      "description": "Operações de autenticação"
+    }
+  ]
+}
